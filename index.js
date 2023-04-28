@@ -156,11 +156,31 @@ module.exports.parse = (buffer) => {
       console.log("tagType", tagType)
       const tagSize = buffer.readUInt32BE(tagHeaderOffset + 8);
       console.log("tagSize", tagSize)
-      const tagValue=Array.from(buffer.slice(tagOffset + 8, tagOffset + tagSize - 7));
+      const numValuesPerEntry = (tagType===mft2)?2:1; // Trying to take into account two and one byte integers it also doesnt take into all tables meaning there might be other two byte tables I did not take into account is gamt one or two byte array of array for example?
+      const tagValue=convertBufferToMatrixArray(buffer.slice(tagOffset + 8, tagOffset + tagSize - 7), numValuesPerEntry); // I just copied line 125, I don't know if this is correct
       console.log("tagValue", tagValue)
-      profile.tables[tagSignature]=[]
+      profile.tables[tagSignature]=tagValue
     }
     tagHeaderOffset = tagHeaderOffset + 12;
   }
   return profile;
 };
+
+
+function convertBufferToMatrixArray(buffer, numValuesPerEntry) {
+  const matrixArray = [];
+  console.log(buffer.length)
+  for (let i = 0; i < buffer.length-3; i += numValuesPerEntry) { // why did do -3 ? I have no idea. it just make things execute with no error
+    const value = buffer.readUInt32BE(i);
+    const row = Math.floor(i / numValuesPerEntry / 3); // I don't what I should get at the end so I don't know if this implementation is correct. Should the matrix be transposed?
+    const column = (i / numValuesPerEntry) % 3;
+
+    if (!matrixArray[row]) {
+      matrixArray[row] = [];
+    }
+
+    matrixArray[row][column] = value;
+  }
+
+  return matrixArray;
+}
