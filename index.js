@@ -99,9 +99,12 @@ module.exports.parse = (buffer) => {
   });
   // Tags
   const tagCount = buffer.readUInt32BE(128);
+  profile.tagCount = tagCount;
   let tagHeaderOffset = 132;
+  profile.tables={};
   for (let i = 0; i < tagCount; i++) {
     const tagSignature = getContentAtOffsetAsString(buffer, tagHeaderOffset);
+    console.log("tagSignature", tagSignature)
     if (tagSignature in tagMap) {
       const tagOffset = buffer.readUInt32BE(tagHeaderOffset + 4);
       const tagSize = buffer.readUInt32BE(tagHeaderOffset + 8);
@@ -146,6 +149,16 @@ module.exports.parse = (buffer) => {
           buffer.readInt32BE(tagOffset + 16) / 65536
         ];
       }
+    } else {
+      const tagOffset = buffer.readUInt32BE(tagHeaderOffset + 4);
+      console.log("tagOffset", tagOffset)
+      const tagType = getContentAtOffsetAsString(buffer, tagOffset);
+      console.log("tagType", tagType)
+      const tagSize = buffer.readUInt32BE(tagHeaderOffset + 8);
+      console.log("tagSize", tagSize)
+      const tagValue=Array.from(buffer.slice(tagOffset + 8, tagOffset + tagSize - 7));
+      console.log("tagValue", tagValue)
+      profile.tables[tagSignature]=[]
     }
     tagHeaderOffset = tagHeaderOffset + 12;
   }
